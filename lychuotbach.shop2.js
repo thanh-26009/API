@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lychuotbach Auto Buy (Stable)
+// @name         Lychuotbach Auto Buy (Stable) by Zerone
 // @namespace    https://lychuotbach.shop/
-// @version      1.1
-// @description  Reload 5p, ép page=2, poll DOM → click MUA + ĐỒNG Ý
+// @version      1.2
+// @description  Auto buy → pause 15 phút sau khi mua
 // @match        https://lychuotbach.shop/accounts/*
 // @run-at       document-idle
 // @grant        none
@@ -10,11 +10,13 @@
 
 (function () {
   'use strict';
-  
-  const time = new Date().toLocaleTimeString();
-  console.log(` ⚡ AUTO BUY STABLE START | ${time}`);
 
-  // ===== helper click =====
+  const time = new Date().toLocaleTimeString();
+  console.log(`⚡ AUTO BUY STABLE START | ${time}`);
+
+  let pausedUntil = 0;
+  let bought = false;
+
   function fire(el) {
     el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
     el.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
@@ -22,18 +24,9 @@
     el.click();
   }
 
-//  // ===== ép page=2 =====
-//  const url = new URL(location.href);
-//  if (url.searchParams.get("page") !== "2") {
-//    url.searchParams.set("page", "2");
-//    location.replace(url.toString());
-//    return;
-//  }
-
-  let bought = false;
-
-  // ===== thử mua =====
   function tryBuy() {
+    // ⏸️ đang pause 15 phút
+    if (Date.now() < pausedUntil) return;
     if (bought) return;
 
     const cards = document.querySelectorAll(
@@ -41,7 +34,6 @@
     );
     if (!cards.length) return;
 
-    // chọn card bất kỳ (nhanh nhất)
     for (const card of cards) {
       const buyBtn = [...card.querySelectorAll("button")]
         .find(b => b.innerText.includes("MUA") && b.offsetParent);
@@ -56,7 +48,6 @@
     }
   }
 
-  // ===== click Đồng ý =====
   function clickConfirm() {
     const loop = () => {
       const dialog = document.querySelector(
@@ -70,7 +61,12 @@
       if (agree) {
         console.log("✅ CLICK ĐỒNG Ý");
         fire(agree);
-        lert('✅ MUA ACC THÀNH CÔNG');
+
+        // ✅ BẮT ĐẦU ĐẾM 15 PHÚT
+        pausedUntil = Date.now() + 15 * 60 * 1000;
+        bought = false;
+
+        alert("✅ MUA ACC THÀNH CÔNG\n⏸️ TẠM DỪNG 15 PHÚT");
         navigator.vibrate?.([200,100,200]);
       } else {
         requestAnimationFrame(loop);
@@ -79,17 +75,12 @@
     loop();
   }
 
-  // ===== polling nhanh (QUAN TRỌNG) =====
-  const poll = setInterval(() => {
-    if (bought) {
-      clearInterval(poll);
-      return;
-    }
-    tryBuy();
-  }, 200); // 200ms → rất nhanh nhưng vẫn an toàn
+  // ===== polling =====
+  setInterval(tryBuy, 200);
 
-  // ===== reload 5 phút =====
+  // ===== reload (không reload khi đang pause) =====
   setInterval(() => {
+    if (Date.now() < pausedUntil) return;
     console.log("♻️ AUTO RELOAD");
     location.reload();
   }, 60000);
