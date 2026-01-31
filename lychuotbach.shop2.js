@@ -10,8 +10,9 @@
 
 (function () {
   'use strict';
-
-  console.log("⚡ AUTO BUY STABLE START");
+  
+  const time = new Date().toLocaleTimeString();
+  console.log(` ⚡ AUTO BUY STABLE START | ${time}`);
 
   // ===== helper click =====
   function fire(el) {
@@ -21,13 +22,13 @@
     el.click();
   }
 
-  // ===== ép page=2 =====
-  const url = new URL(location.href);
-  if (url.searchParams.get("page") !== "2") {
-    url.searchParams.set("page", "2");
-    location.replace(url.toString());
-    return;
-  }
+//  // ===== ép page=2 =====
+//  const url = new URL(location.href);
+//  if (url.searchParams.get("page") !== "2") {
+//    url.searchParams.set("page", "2");
+//    location.replace(url.toString());
+//    return;
+//  }
 
   let bought = false;
 
@@ -69,6 +70,8 @@
       if (agree) {
         console.log("✅ CLICK ĐỒNG Ý");
         fire(agree);
+        lert('✅ MUA ACC THÀNH CÔNG');
+        navigator.vibrate?.([200,100,200]);
       } else {
         requestAnimationFrame(loop);
       }
