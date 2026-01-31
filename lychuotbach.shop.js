@@ -1,27 +1,28 @@
 // ==UserScript==
-// @name         Lychuotbach Auto Check Available
+// @name         Lychuotbach Auto Check Available (Dynamic URL)
 // @namespace    https://lychuotbach.shop/
-// @version      1.0
-// @description  Auto check available_quantity mỗi 60s, notify không cần F12
+// @version      1.1
+// @description  Auto check available_quantity, luôn lấy ID mới từ URL
 // @match        https://lychuotbach.shop/accounts/*
-// @grant        GM_notification
 // @grant        GM_log
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  // 🔹 Lấy ID từ URL
+  let lastAvailable = null;
+  let lastUrl = location.href;
+
+  // 🔹 Lấy ID từ URL HIỆN TẠI
   function getIdFromUrl() {
-    const path = window.location.pathname.split("/");
-    return path[path.length - 1];
+    const match = location.pathname.match(/\/accounts\/([a-f0-9-]+)/i);
+    return match ? match[1] : null;
   }
 
-  // 🔹 Hàm check API
   async function checkNewAcc() {
     const id = getIdFromUrl();
     if (!id) {
-      GM_log("❌ Không lấy được ID");
+      GM_log("❌ Không lấy được ID từ URL:", location.href);
       return;
     }
 
@@ -30,50 +31,61 @@
     try {
       const res = await fetch(apiUrl, {
         method: "GET",
-        credentials: "include", // gửi cookie
+        credentials: "include",
         headers: {
           "accept": "application/json",
           "data-from": "SHOP_LY",
-          "referer": window.location.href
+          "referer": location.href
         }
       });
 
       if (!res.ok) {
-        GM_log("❌ API lỗi:", res.status);
-        GM_notification({
-          title: "Lychuotbach",
-          text: `API lỗi ${res.status}`,
-          timeout: 3000
-        });
+        GM_log(`❌ API lỗi ${res.status} | ${apiUrl}`);
         return;
       }
 
       const json = await res.json();
       const available = json?.data?.available_quantity;
-
       if (available === undefined) {
         GM_log("⚠️ Không có available_quantity");
         return;
       }
 
-      const msg = `Available: ${available}`;
-      GM_log("✅", msg);
+      const time = new Date().toLocaleTimeString();
+      const logMsg = `✅ OK | Available: ${available} | ${time}`;
 
-      GM_notification({
-        title: "Lychuotbach Check",
-        text: msg,
-        timeout: 3000
-      });
+
+      if (lastAvailable !== null && available !== lastAvailable) {
+        GM_log(
+          `🔥 Thay đổi | ${lastAvailable} → ${available} | ${time}`
+        );
+      } else {
+        console.log(logMsg);
+        GM_log(
+            logMsg
+        );
+      }
+
+      lastAvailable = available;
 
     } catch (err) {
       GM_log("❌ Lỗi JS:", err);
     }
   }
 
-  // ▶️ chạy ngay khi vào trang
+  // ▶️ chạy ngay
   checkNewAcc();
 
-  // ⏱️ refresh mỗi 60s
-  setInterval(checkNewAcc, 60000);
+  // ⏱️ check mỗi 60s
+  setInterval(() => {
+    // nếu URL đổi → reset dữ liệu cũ
+    if (location.href !== lastUrl) {
+      GM_log("🔄 URL đổi:", location.href);
+      lastUrl = location.href;
+      lastAvailable = null;
+    }
+
+    checkNewAcc();
+  }, 300000);
 
 })();
