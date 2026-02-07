@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lychuotbach Auto Check Available (Dynamic URL)
+// @name         Lychuotbach Auto Check & Buy (Latest 10)
 // @namespace    https://lychuotbach.shop/
-// @version      2.0
-// @description  Auto check available_quantity, luôn lấy ID mới từ URL
+// @version      3.1
+// @description  Auto check available + auto buy 10 acc newest khi shop up acc
 // @match        https://lychuotbach.shop/accounts/*
 // @grant        GM_log
 // ==/UserScript==
@@ -12,88 +12,109 @@
 
   let lastAvailable = null;
   let lastUrl = location.href;
+  let hasBought = false; // tránh bắn lại nhiều lần
 
-  // 🔹 Lấy ID từ URL HIỆN TẠI
+  // 🔹 Lấy cate_id từ URL
   function getIdFromUrl() {
     const match = location.pathname.match(/\/accounts\/([a-f0-9-]+)/i);
     return match ? match[1] : null;
   }
 
   async function checkNewAcc() {
-    const id = getIdFromUrl();
-    console.log("📌 cate_id:", id);
-    if (!id) {
-      GM_log("❌ Không lấy được ID từ URL:", location.href);
+    const cateId = getIdFromUrl();
+    if (!cateId) {
+      GM_log("❌ Không lấy được cate_id");
       return;
     }
 
-    const apicategory = `https://lychuotbach.shop/api/category/${id}`;
-    const apiid = `https://lychuotbach.shop/api/accounts/public/single?cate_id=${id}&limit=21&page=1`;
+    const apiCategory = `https://lychuotbach.shop/api/category/${cateId}`;
+    const apiAccounts =
+      `https://lychuotbach.shop/api/accounts/public/single?cate_id=${cateId}&limit=21&page=1`;
 
     try {
-        // 🔥 GỌI SONG SONG – KHÔNG DELAY
-        const [cateRes, accRes] = await Promise.all([
-        fetch(apicategory, {
-            credentials: "include",
-            headers: {
+      // 🔥 GỌI SONG SONG
+      const [cateRes, accRes] = await Promise.all([
+        fetch(apiCategory, {
+          credentials: "include",
+          headers: {
             "accept": "*/*",
             "content-type": "application/json",
             "data-from": "SHOP_LY",
             "referer": location.href
-            }
+          }
         }),
-        fetch(apiid, {
-            credentials: "include",
-            headers: {
+        fetch(apiAccounts, {
+          credentials: "include",
+          headers: {
             "accept": "*/*",
             "content-type": "application/json",
             "data-from": "SHOP_LY",
             "referer": location.href
-            }
+          }
         })
-        ]);
+      ]);
 
-        if (!cateRes.ok || !accRes.ok) {
-        console.error("❌ API lỗi",
-            cateRes.status,
-            accRes.status
-        );
+      if (!cateRes.ok || !accRes.ok) {
+        console.error("❌ API lỗi", cateRes.status, accRes.status);
         return;
-        }
+      }
 
-        const cateData = await cateRes.json();
-        const idData = await accRes.json();
+      const cateData = await cateRes.json();
+      const accData = await accRes.json();
 
       const available = cateData?.data?.available_quantity;
-      if (available === undefined) {
-        GM_log("⚠️ Không có available_quantity");
+      if (available === undefined) return;
+
+      const time = new Date().toLocaleTimeString();
+
+      // 🔹 LẤY LIST ACC
+      const list =
+        accData?.data?.records ??
+        accData?.data ??
+        [];
+
+      if (!Array.isArray(list) || list.length === 0) {
+        console.log("⚠️ Không có acc");
         return;
       }
 
-      const time = new Date().toLocaleTimeString();
-      const logMsg = `✅ OK | Available: ${available} | ${time}`;
-      // 🔢 Đếm số acc
-      const list =
-        idData?.data?.records ??
-        idData?.data ??
-        [];
-      
-      // 🧾 In chi tiết từng acc (nếu có)
-      if (Array.isArray(list)) {
-        console.table(list);
-      }
+      console.log(`📦 Tổng acc trả về: ${list.length}`);
 
-      if (lastAvailable !== null && available !== lastAvailable) {
-        GM_log(
-          `🔥 Thay đổi | ${lastAvailable} → ${available} | ${time}`
+      // 🔥 SORT THEO created_at (MỚI → CŨ)
+      const sortedByTime = [...list].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      // 🔥 LẤY 10 ACC MỚI NHẤT
+      const latest10Accs = sortedByTime.slice(0, 10);
+      const latest10Ids = latest10Accs.map(acc => acc.id);
+
+      console.log("🔥 10 ACC MỚI NHẤT:", latest10Ids);
+
+      // 🔥 PHÁT HIỆN SHOP UP ACC → BẮN
+      if (available > 0 && !hasBought) {
+        GM_log(`🔥 PHÁT HIỆN ACC > 0 → BẮN NGAY | Available: ${available} | ${time}`);
+        hasBought = true; // khóa không cho bắn lại
+
+        const apiBuy = (id) =>
+          fetch("https://lychuotbach.shop/api/account-transaction/buy-by-id", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+              "data-from": "SHOP_LY"
+            },
+            body: JSON.stringify({ account_id: id })
+          });
+
+        // 🚀 BẮN SONG SONG 10 ACC
+        await Promise.all(
+          latest10Ids.map(id => apiBuy(id))
         );
-        console.log("✅ SỐ ACC TRẢ VỀ:", list.length);
+
+        console.log("✅ ĐÃ BẮN XONG 10 ACC");
       } else {
-        console.log(logMsg);
-        console.log("✅ SỐ ACC TRẢ VỀ:", list.length);
-        GM_log(
-            logMsg
-        );
+        console.log(`✅ OK | Available: ${available} | ${time}`);
       }
 
       lastAvailable = available;
@@ -103,18 +124,17 @@
     }
   }
 
-  // ▶️ chạy ngay
+  // ▶️ chạy ngay khi load trang
   checkNewAcc();
 
   // ⏱️ check mỗi 60s
   setInterval(() => {
-    // nếu URL đổi → reset dữ liệu cũ
     if (location.href !== lastUrl) {
-      GM_log("🔄 URL đổi:", location.href);
+      GM_log("🔄 URL đổi → reset trạng thái");
       lastUrl = location.href;
       lastAvailable = null;
+      hasBought = false;
     }
-
     checkNewAcc();
   }, 60000);
 
