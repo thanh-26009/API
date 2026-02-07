@@ -74,7 +74,7 @@
         [];
 
       if (!Array.isArray(list) || list.length === 0) {
-        console.log("⚠️ Không có acc");
+        console.log(`⚠️ Không có acc | ${time}`);
         return;
       }
 
