@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lychuotbach Auto Check Available (Dynamic URL)
 // @namespace    https://lychuotbach.shop/
-// @version      1.1
+// @version      2.0
 // @description  Auto check available_quantity, luôn lấy ID mới từ URL
 // @match        https://lychuotbach.shop/accounts/*
 // @grant        GM_log
