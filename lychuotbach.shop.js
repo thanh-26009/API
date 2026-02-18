@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lychuotbach Auto Check & Buy (Latest 20)
 // @namespace    https://lychuotbach.shop/
-// @version      3.2
+// @version      3.3
 // @description  Auto check available + auto buy 20 acc newest khi shop up acc
 // @match        https://lychuotbach.shop/accounts/*
 // @match        https://lychuotbach.shop/*
@@ -90,7 +90,7 @@
       const latest20Accs = sortedByTime.slice(0, 20);
       const latest20Ids = latest20Accs.map(acc => acc.id);
 
-      console.log("🔥 20 ACC MỚI NHẤT:", latest10Ids);
+      console.log("🔥 20 ACC MỚI NHẤT:", latest20Ids);
 
       // 🔥 PHÁT HIỆN SHOP UP ACC → BẮN
       if (available > 0 && !hasBought) {
@@ -110,9 +110,9 @@
             body: JSON.stringify({ account_id: id })
           });
 
-        // 🚀 BẮN SONG SONG 10 ACC
+        // 🚀 BẮN SONG SONG 20 ACC
         await Promise.all(
-          latest10Ids.map(id => apiBuy(id))
+          latest20Ids.map(id => apiBuy(id))
         );
 
         console.log("✅ ĐÃ BẮN XONG 20 ACC");
