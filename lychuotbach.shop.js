@@ -85,11 +85,11 @@
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
 
-      // 🔥 LẤY 10 ACC MỚI NHẤT
-      const latest10Accs = sortedByTime.slice(0, 10);
-      const latest10Ids = latest10Accs.map(acc => acc.id);
+      // 🔥 LẤY 20 ACC MỚI NHẤT
+      const latest20Accs = sortedByTime.slice(0, 20);
+      const latest20Ids = latest20Accs.map(acc => acc.id);
 
-      console.log("🔥 10 ACC MỚI NHẤT:", latest10Ids);
+      console.log("🔥 20 ACC MỚI NHẤT:", latest10Ids);
 
       // 🔥 PHÁT HIỆN SHOP UP ACC → BẮN
       if (available > 0 && !hasBought) {
@@ -114,7 +114,7 @@
           latest10Ids.map(id => apiBuy(id))
         );
 
-        console.log("✅ ĐÃ BẮN XONG 10 ACC");
+        console.log("✅ ĐÃ BẮN XONG 20 ACC");
       } else {
         console.log(`✅ OK | Available: ${available} | ${time}`);
       }
