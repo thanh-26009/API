@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lychuotbach Auto Check & Buy (Latest 10)
 // @namespace    https://lychuotbach.shop/
-// @version      3.1
+// @version      3.2
 // @description  Auto check available + auto buy 10 acc newest khi shop up acc
 // @match        https://lychuotbach.shop/accounts/*
 // @grant        GM_log
@@ -102,7 +102,9 @@
             credentials: "include",
             headers: {
               "Content-Type": "application/json",
-              "data-from": "SHOP_LY"
+              "data-from": "SHOP_LY",
+              "origin": "https://lychuotbach.shop" ,
+              "referer": location.href
             },
             body: JSON.stringify({ account_id: id })
           });
