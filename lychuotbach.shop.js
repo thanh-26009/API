@@ -4,6 +4,7 @@
 // @version      3.2
 // @description  Auto check available + auto buy 20 acc newest khi shop up acc
 // @match        https://lychuotbach.shop/accounts/*
+// @match        https://lychuotbach.shop/*
 // @grant        GM_log
 // ==/UserScript==
 
