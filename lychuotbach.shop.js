@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lychuotbach Auto Check & Buy (Latest 10)
+// @name         Lychuotbach Auto Check & Buy (Latest 20)
 // @namespace    https://lychuotbach.shop/
 // @version      3.2
-// @description  Auto check available + auto buy 10 acc newest khi shop up acc
+// @description  Auto check available + auto buy 20 acc newest khi shop up acc
 // @match        https://lychuotbach.shop/accounts/*
 // @grant        GM_log
 // ==/UserScript==
