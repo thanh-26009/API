@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lychuotbach Auto Check & Buy (Latest 20)
 // @namespace    https://lychuotbach.shop/
-// @version      3.3
+// @version      3.4
 // @description  Auto check available + auto buy 20 acc newest khi shop up acc
 // @match        https://lychuotbach.shop/accounts/*
 // @match        https://lychuotbach.shop/*
@@ -104,7 +104,7 @@
             headers: {
               "Content-Type": "application/json",
               "data-from": "SHOP_LY",
-              "origin": "https://lychuotbach.shop" ,
+              "origin": "https://lychuotbach.shop",
               "referer": location.href
             },
             body: JSON.stringify({ account_id: id })
@@ -127,18 +127,46 @@
     }
   }
 
-  // ▶️ chạy ngay khi load trang
+  // ⏱️ Hàm lên lịch chạy đúng vào giây :00 của mỗi phút
+  function scheduleAtNextMinute() {
+    const now = new Date();
+    const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
+    GM_log(`⏳ Chờ ${(msUntilNextMinute / 1000).toFixed(2)}s đến :00 tiếp theo`);
+
+    setTimeout(() => {
+      // 🔹 Reset URL nếu đổi
+      if (location.href !== lastUrl) {
+        GM_log("🔄 URL đổi → reset trạng thái");
+        lastUrl = location.href;
+        lastAvailable = null;
+        hasBought = false;
+      }
+
+      GM_log(`🕐 Chạy đúng :00 | ${new Date().toLocaleTimeString()}`);
+      checkNewAcc();
+
+      // 🔁 Lặp lại mỗi 60s chính xác từ đây
+      setInterval(() => {
+        if (location.href !== lastUrl) {
+          GM_log("🔄 URL đổi → reset trạng thái");
+          lastUrl = location.href;
+          lastAvailable = null;
+          hasBought = false;
+        }
+
+        GM_log(`🕐 Chạy đúng :00 | ${new Date().toLocaleTimeString()}`);
+        checkNewAcc();
+      }, 60000);
+
+    }, msUntilNextMinute);
+  }
+
+  // ▶️ Chạy ngay khi load trang
+  GM_log("🚀 Script khởi động, chạy lần đầu ngay...");
   checkNewAcc();
 
-  // ⏱️ check mỗi 60s
-  setInterval(() => {
-    if (location.href !== lastUrl) {
-      GM_log("🔄 URL đổi → reset trạng thái");
-      lastUrl = location.href;
-      lastAvailable = null;
-      hasBought = false;
-    }
-    checkNewAcc();
-  }, 60000);
+  // ⏱️ Sau đó đồng bộ theo giây :00
+  scheduleAtNextMinute();
 
 })();
